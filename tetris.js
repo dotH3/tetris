@@ -1,4 +1,7 @@
 #!/usr/bin/env nodejs
+function debug(msg) {
+    require('fs').appendFileSync('/tmp/tetris.log', msg + '\n');
+}
 
 var PLAYFIELD_W = 10,
     PLAYFIELD_H = 20,
@@ -28,9 +31,31 @@ var PLAYFIELD_W = 10,
     PLAYFIELD_EMPTY_CELL = " .",
     FILLED_CELL = "[]";
 
+const lang = 'spanish'
+var i18n = { i18n_game_over: 'Game over!' }
+
 function TetrisScreen() {
     this.s = "";
     this.use_color = true;
+    this.load_lang()
+}
+
+TetrisScreen.prototype.load_lang = function () {
+    debug("loading lang")
+    debug(i18n.i18n_game_over)
+    const lang_content = String(require('fs').readFileSync(`./lang/${lang}.sh`))
+    const list = lang_content.split('\n')
+        .filter(line => line.includes('='))
+        .map(line => {
+            const [key, ...rest] = line.split('=');
+            const value = rest.join('=').replace(/^"|"$/g, '');
+            i18n[key] = value;
+            // debug(`${key}=${value}`)
+            return { key, value };
+        });
+
+    // debug(list[0].key)
+    debug(i18n.i18n_game_over)
 }
 
 TetrisScreen.prototype.toggle_color = function() {
@@ -377,7 +402,7 @@ TetrisController.prototype.process_key = function(key) {
 }
 
 TetrisController.prototype.quit = function() {
-    this.screen.xyprint(GAMEOVER_X, GAMEOVER_Y, "Game over!");
+    this.screen.xyprint(GAMEOVER_X, GAMEOVER_Y, i18n.i18n_game_over);
     this.screen.xyprint(GAMEOVER_X, GAMEOVER_Y + 1, "");
     this.screen.show_cursor();
     this.screen.flush();
