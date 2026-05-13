@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash/env
 
 # Tetris game written in pure bash
 #
