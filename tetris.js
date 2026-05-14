@@ -1,4 +1,6 @@
 #!/usr/bin/env nodejs
+
+//? tail -f /tmp/tetris.log
 function debug(msg) {
     require('fs').appendFileSync('/tmp/tetris.log', msg + '\n');
 }
@@ -20,7 +22,7 @@ var PLAYFIELD_W = 10,
     NEXT_X = 14,
     NEXT_Y = 11,
 
-    GAMEOVER_X = 1,
+    GAMEOVER_X = PLAYFIELD_X + PLAYFIELD_W,
     GAMEOVER_Y = PLAYFIELD_H + 3,
 
     INITIAL_MOVE_DOWN_DELAY = 1000,
@@ -31,8 +33,26 @@ var PLAYFIELD_W = 10,
     PLAYFIELD_EMPTY_CELL = " .",
     FILLED_CELL = "[]";
 
-const lang = 'spanish'
-var i18n = { i18n_game_over: 'Game over!' }
+var lang = 'english';
+var langIdx = process.argv.indexOf('-l');
+if (langIdx !== -1 && process.argv[langIdx + 1]) {
+    lang = process.argv[langIdx + 1];
+}
+var i18n = { 
+    i18n_lines_completed: 'Lines completed: ',
+    i18n_level: 'Level:           ',
+    i18n_score: 'Score:           ',
+    i18n_use_cursor_keys: '  Use cursor keys',
+    i18n_or: '       or',
+    i18n_rotate: '    s: rotate',
+    i18n_left_right: 'a: left,  d: right',
+    i18n_drop: '    space: drop',
+    i18n_quit: '      q: quit',
+    i18n_toggle_color: '  c: toggle color',
+    i18n_toggle_show_next: 'n: toggle show next',
+    i18n_toggle_this_help: 'h: toggle this help',
+    i18n_game_over: 'Game over!', 
+}
 
 function TetrisScreen() {
     this.s = "";
@@ -41,8 +61,7 @@ function TetrisScreen() {
 }
 
 TetrisScreen.prototype.load_lang = function () {
-    debug("loading lang")
-    debug(i18n.i18n_game_over)
+    if(lang === 'english')return
     const lang_content = String(require('fs').readFileSync(`./lang/${lang}.sh`))
     const list = lang_content.split('\n')
         .filter(line => line.includes('='))
@@ -55,7 +74,6 @@ TetrisScreen.prototype.load_lang = function () {
         });
 
     // debug(list[0].key)
-    debug(i18n.i18n_game_over)
 }
 
 TetrisScreen.prototype.toggle_color = function() {
@@ -225,16 +243,17 @@ TetrisHelp.prototype.constructor = TetrisHelp;
 function TetrisHelp(screen) {
     this.screen = screen;
     this.color = HELP_COLOR;
+    const {i18n_use_cursor_keys, i18n_or, i18n_rotate, i18n_left_right, i18n_drop, i18n_quit, i18n_toggle_color, i18n_toggle_show_next, i18n_toggle_this_help} = i18n
     this.text = [
-        "  Use cursor keys",
-        "       or",
-        "    s: rotate",
-        "a: left,  d: right",
-        "    space: drop",
-        "      q: quit",
-        "  c: toggle color",
-        "n: toggle show next",
-        "h: toggle this help"
+        i18n_use_cursor_keys,
+        i18n_or,
+        i18n_rotate,
+        i18n_left_right,
+        i18n_drop,
+        i18n_quit,
+        i18n_toggle_color,
+        i18n_toggle_show_next,
+        i18n_toggle_this_help
     ]   
 }
 
@@ -271,9 +290,9 @@ TetrisScore.prototype.update = function(complete_lines) {
 TetrisScore.prototype.show = function() {
     this.screen.set_bold();
     this.screen.set_fg(SCORE_COLOR);
-    this.screen.xyprint(SCORE_X, SCORE_Y,     "Lines completed: " + this.lines_completed);
-    this.screen.xyprint(SCORE_X, SCORE_Y + 1, "Level:           " + this.level);
-    this.screen.xyprint(SCORE_X, SCORE_Y + 2, "Score:           " + this.score);
+    this.screen.xyprint(SCORE_X, SCORE_Y, i18n.i18n_lines_completed + this.lines_completed);
+    this.screen.xyprint(SCORE_X, SCORE_Y + 1, i18n.i18n_level + this.level);
+    this.screen.xyprint(SCORE_X, SCORE_Y + 2, i18n.i18n_score + this.score);
     this.screen.reset_colors();
 }
 
@@ -402,9 +421,11 @@ TetrisController.prototype.process_key = function(key) {
 }
 
 TetrisController.prototype.quit = function() {
-    this.screen.xyprint(GAMEOVER_X, GAMEOVER_Y, i18n.i18n_game_over);
-    this.screen.xyprint(GAMEOVER_X, GAMEOVER_Y + 1, "");
+    const text = i18n.i18n_game_over
+    this.screen.xyprint(GAMEOVER_X - (text.length/2), GAMEOVER_Y, text);
+    this.screen.xyprint(GAMEOVER_X - (text.length/2), GAMEOVER_Y + 1, "");
     this.screen.show_cursor();
+    this.screen.print("\n");
     this.screen.flush();
     clearTimeout(this.tetris_input_processor.tick_timeout);
     process.stdin.pause();
