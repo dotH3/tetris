@@ -129,7 +129,7 @@ NEXT_X=14
 NEXT_Y=11
 
 # Location of "game over" in the end of the game
-GAMEOVER_X=1
+GAMEOVER_X=$((PLAYFIELD_X + PLAYFIELD_W))
 GAMEOVER_Y=$((PLAYFIELD_H + 3))
 
 # Intervals after which game level (and game speed) is increased 
@@ -523,8 +523,9 @@ cmd_drop() {
 stty_g=$(stty -g)              # let's save terminal state ...
 
 at_exit() {
-    kill $ticker_pid                             # let's kill ticker process ...
-    xyprint $GAMEOVER_X $GAMEOVER_Y "$i18n_game_over"
+    kill $ticker_pid    
+    offset=$((${#i18n_game_over} / 2))                         # let's kill ticker process ...
+    xyprint $((GAMEOVER_X - offset)) $GAMEOVER_Y "$i18n_game_over"
     echo -e "$screen_buffer"                     # ... print final message ...
     show_cursor
     stty $stty_g                                 # ... and restore terminal state
